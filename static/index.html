@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jukebox</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem;
+      background: #0a0a0a;
+      color: #c0ffc0;
+      position: relative;
+    }
+
+    /* Subtle scanline overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.06) 0px,
+        rgba(0, 0, 0, 0.06) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 0.15rem;
+      font-size: 2rem;
+      color: #00ff41;
+      text-shadow:
+        0 0 7px #00ff41,
+        0 0 20px #00ff41,
+        0 0 40px #00cc33;
+      letter-spacing: 0.15em;
+    }
+    .subtitle {
+      text-align: center;
+      color: #6a6aaa;
+      font-size: 0.8rem;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.1em;
+    }
+
+    /* --- Sections --- */
+    section {
+      margin-bottom: 1.5rem;
+      border: 1px solid #1a3a1a;
+      border-radius: 6px;
+      padding: 1rem;
+      background: linear-gradient(180deg, #0d110d 0%, #0a0a0a 100%);
+    }
+    section h2 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #b44aff;
+      margin-bottom: 0.6rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid #2a1a3a;
+      text-shadow: 0 0 8px rgba(180, 74, 255, 0.5);
+    }
+
+    /* --- Now Playing --- */
+    #now-playing-content {
+      padding: 0.85rem;
+      border-radius: 6px;
+      background: #0f160f;
+      border: 1px solid #1a3a1a;
+      min-height: 3rem;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #now-playing-content::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 6px;
+      opacity: 0;
+      box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.1);
+      transition: opacity 0.3s;
+    }
+    #now-playing-content.playing::before { opacity: 1; }
+    #now-playing-content.empty { color: #2a4a2a; font-style: italic; }
+    .np-title {
+      color: #00ff41;
+      text-shadow: 0 0 5px rgba(0, 255, 65, 0.4);
+    }
+    .np-channel { font-size: 0.8rem; color: #5a8a5a; margin-top: 0.15rem; }
+    .np-duration {
+      margin-left: auto;
+      font-variant-numeric: tabular-nums;
+      color: #b44aff;
+      white-space: nowrap;
+      padding-left: 1rem;
+      text-shadow: 0 0 6px rgba(180, 74, 255, 0.4);
+    }
+
+    /* Equalizer animation for now playing */
+    .eq-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 18px;
+      margin-right: 0.75rem;
+    }
+    .eq-bars span {
+      display: block;
+      width: 3px;
+      background: #00ff41;
+      border-radius: 1px;
+      animation: eqPulse 0.8s ease-in-out infinite alternate;
+      box-shadow: 0 0 4px rgba(0, 255, 65, 0.6);
+    }
+    .eq-bars span:nth-child(1) { animation-duration: 0.6s; height: 30%; }
+    .eq-bars span:nth-child(2) { animation-duration: 0.8s; height: 70%; }
+    .eq-bars span:nth-child(3) { animation-duration: 0.5s; height: 50%; }
+    .eq-bars span:nth-child(4) { animation-duration: 0.7s; height: 90%; }
+    .eq-bars span:nth-child(5) { animation-duration: 0.55s; height: 40%; }
+    @keyframes eqPulse {
+      from { transform: scaleY(0.3); }
+      to   { transform: scaleY(1); }
+    }
+
+    /* --- Queue items (shared for both queues) --- */
+    .queue-item {
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      background: #0f160f;
+      border: 1px solid #1a3a1a;
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .queue-pos {
+      color: #b44aff;
+      font-weight: bold;
+      min-width: 1.5rem;
+      text-align: center;
+      text-shadow: 0 0 5px rgba(180, 74, 255, 0.4);
+    }
+    .queue-info { flex: 1; min-width: 0; }
+    .queue-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #a0e0a0;
+    }
+    .queue-meta { font-size: 0.75rem; color: #3d6a3d; }
+
+    .queue-empty {
+      color: #1e3a1e;
+      font-style: italic;
+      padding: 0.5rem;
+      text-align: center;
+    }
+
+    /* Badge for downloaded vs pending */
+    .badge {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    .badge-ready {
+      background: rgba(0, 255, 65, 0.1);
+      color: #00ff41;
+      border: 1px solid #00ff4133;
+    }
+    .badge-pending {
+      background: rgba(180, 74, 255, 0.1);
+      color: #b44aff;
+      border: 1px solid #b44aff33;
+    }
+
+    /* --- Search --- */
+    #search-bar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    #search-bar input {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      border: 1px solid #1a3a1a;
+      background: #0f160f;
+      color: #c0ffc0;
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #search-bar input:focus {
+      outline: none;
+      border-color: #00ff41;
+      box-shadow: 0 0 8px rgba(0, 255, 65, 0.25);
+    }
+    #search-bar input::placeholder { color: #2a4a2a; }
+
+    button {
+      padding: 0.5rem 1rem;
+      border: 1px solid #1a3a1a;
+      border-radius: 4px;
+      background: #0f1a0f;
+      color: #00ff41;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+    }
+    button:hover:not(:disabled) {
+      background: #1a2e1a;
+      border-color: #00ff41;
+      box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+      text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+    }
+    button:disabled { opacity: 0.3; cursor: default; }
+
+    .song-row {
+      padding: 0.75rem;
+      margin-bottom: 0.4rem;
+      border-radius: 4px;
+      border: 1px solid #1a3a1a;
+      background: #0f160f;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .song-row:hover {
+      border-color: #b44aff;
+      box-shadow: 0 0 8px rgba(180, 74, 255, 0.15);
+    }
+    .song-row.selected {
+      border-color: #00ff41;
+      box-shadow:
+        0 0 8px rgba(0, 255, 65, 0.2),
+        inset 0 0 15px rgba(0, 255, 65, 0.05);
+    }
+    .song-row.selected strong { color: #00ff41; }
+    .song-row strong { color: #a0e0a0; }
+    .song-meta { font-size: 0.8rem; color: #3d6a3d; margin-top: 0.2rem; }
+
+    #add-btn {
+      margin-top: 0.6rem;
+      width: 100%;
+      padding: 0.75rem;
+      background: linear-gradient(180deg, #1a0a2e, #120822);
+      border-color: #b44aff;
+      color: #b44aff;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    #add-btn:hover:not(:disabled) {
+      background: linear-gradient(180deg, #2a1a4e, #1a0a2e);
+      box-shadow: 0 0 15px rgba(180, 74, 255, 0.3);
+      text-shadow: 0 0 8px rgba(180, 74, 255, 0.6);
+    }
+
+    .spinner {
+      display: none;
+      text-align: center;
+      padding: 1rem;
+      color: #3d6a3d;
+    }
+    .spinner.active {
+      display: block;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50%      { opacity: 1; }
+    }
+
+    #status {
+      margin-top: 0.75rem;
+      padding: 0.5rem;
+      border-radius: 4px;
+      text-align: center;
+      display: none;
+      font-size: 0.85rem;
+    }
+    #status.success {
+      display: block;
+      background: rgba(0, 255, 65, 0.08);
+      color: #00ff41;
+      border: 1px solid #00ff4133;
+    }
+    #status.error {
+      display: block;
+      background: rgba(255, 40, 40, 0.08);
+      color: #ff4040;
+      border: 1px solid #ff404033;
+    }
+
+    /* --- QR --- */
+    #qr-section { text-align: center; }
+    #qr-section img {
+      max-width: 160px;
+      border-radius: 6px;
+      margin-top: 0.5rem;
+      border: 1px solid #1a3a1a;
+      filter: drop-shadow(0 0 8px rgba(0, 255, 65, 0.15));
+    }
+    #qr-section p {
+      font-size: 0.75rem;
+      color: #2a4a2a;
+      margin-top: 0.4rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* Scrollbar theming */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0a0a0a; }
+    ::-webkit-scrollbar-thumb {
+      background: #1a3a1a;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: #2a5a2a; }
+  </style>
+</head>
+<body>
+  <h1>&gt; JUKEBOX_</h1>
+  <p class="subtitle">[ SELECT TRACK // ENTER THE QUEUE ]</p>
+
+  <!-- Now Playing -->
+  <section>
+    <h2>&gt; Now Playing</h2>
+    <div id="now-playing-content" class="empty">Awaiting input...</div>
+  </section>
+
+  <!-- Downloaded / Ready Queue -->
+  <section>
+    <h2>&gt; Ready to Play</h2>
+    <div id="downloaded-queue-list">
+      <div class="queue-empty">No tracks loaded</div>
+    </div>
+  </section>
+
+  <!-- Pending Queue -->
+  <section>
+    <h2>&gt; Queued</h2>
+    <div id="queue-list">
+      <div class="queue-empty">Queue empty &mdash; search below</div>
+    </div>
+  </section>
+
+  <!-- Search -->
+  <section>
+    <h2>&gt; Search</h2>
+    <div id="search-bar">
+      <input type="text" id="search-input"
+             placeholder="> enter search query..." autocomplete="off">
+      <button onclick="doSearch()">SCAN</button>
+    </div>
+    <div id="spinner" class="spinner">&gt; Searching the grid...</div>
+    <div id="results"></div>
+    <div id="status"></div>
+  </section>
+
+  <!-- QR Code -->
+  <section id="qr-section">
+    <h2>&gt; Uplink</h2>
+    <img src="/static/qr.png" alt="QR code to this page">
+    <p>// scan to connect //</p>
+  </section>
+
+  <script>
+    let songs = [];
+    let selectedIndex = null;
+    const POLL_MS = 3000;
+
+    const $ = id => document.getElementById(id);
+
+    function fmtDuration(dur) {
+      const mins = Math.floor(dur / 60);
+      const secs = String(dur % 60).padStart(2, '0');
+      return mins + ':' + secs;
+    }
+
+    // ---- Polling ----
+
+    async function pollNowPlaying() {
+      try {
+        const res = await fetch('/api/now_playing');
+        if (!res.ok) return;
+        const song = await res.json();
+        const el = $('now-playing-content');
+        if (!song) {
+          el.className = 'empty';
+          el.innerHTML = 'Awaiting input...';
+        } else {
+          el.className = 'playing';
+          el.innerHTML =
+            `<div class="eq-bars">
+              <span></span><span></span><span></span>
+              <span></span><span></span>
+            </div>
+            <div>
+              <div class="np-title">${esc(song.title)}</div>
+              <div class="np-channel">${esc(song.channel)}</div>
+            </div>
+            <span class="np-duration">${fmtDuration(song.duration)}</span>`;
+        }
+      } catch (_) {}
+    }
+
+    async function pollQueue() {
+      try {
+        const res = await fetch('/api/queue');
+        if (!res.ok) return;
+        const queue = await res.json();
+        const el = $('queue-list');
+        if (queue.length === 0) {
+          el.innerHTML =
+            '<div class="queue-empty">Queue empty &mdash; search below</div>';
+          return;
+        }
+        el.innerHTML = queue.map((song, i) =>
+          `<div class="queue-item">
+            <span class="queue-pos">${i + 1}</span>
+            <div class="queue-info">
+              <div class="queue-title">${esc(song.title)}</div>
+              <div class="queue-meta">
+                ${esc(song.channel)} &middot; ${fmtDuration(song.duration)}
+              </div>
+            </div>
+            <span class="badge badge-pending">pending</span>
+          </div>`
+        ).join('');
+      } catch (_) {}
+    }
+
+    async function pollDownloadedQueue() {
+      try {
+        const res = await fetch('/api/downloaded_queue');
+        if (!res.ok) return;
+        const queue = await res.json();
+        const el = $('downloaded-queue-list');
+        if (queue.length === 0) {
+          el.innerHTML =
+            '<div class="queue-empty">No tracks loaded</div>';
+          return;
+        }
+        el.innerHTML = queue.map((song, i) =>
+          `<div class="queue-item">
+            <span class="queue-pos">${i + 1}</span>
+            <div class="queue-info">
+              <div class="queue-title">${esc(song.title)}</div>
+              <div class="queue-meta">
+                ${esc(song.channel)} &middot; ${fmtDuration(song.duration)}
+              </div>
+            </div>
+            <span class="badge badge-ready">ready</span>
+          </div>`
+        ).join('');
+      } catch (_) {}
+    }
+
+    function startPolling() {
+      pollNowPlaying();
+      pollQueue();
+      pollDownloadedQueue();
+      setInterval(pollNowPlaying, POLL_MS);
+      setInterval(pollQueue, POLL_MS);
+      setInterval(pollDownloadedQueue, POLL_MS);
+    }
+
+    // ---- Search ----
+
+    $('search-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doSearch();
+    });
+
+    async function doSearch() {
+      const q = $('search-input').value.trim();
+      if (!q) return;
+
+      songs = [];
+      selectedIndex = null;
+      $('results').innerHTML = '';
+      $('status').className = '';
+      $('spinner').classList.add('active');
+
+      try {
+        const res = await fetch(
+          '/api/search?q=' + encodeURIComponent(q)
+        );
+        if (!res.ok) throw new Error('Search failed');
+        songs = await res.json();
+        renderResults();
+      } catch (e) {
+        showStatus(e.message, false);
+      } finally {
+        $('spinner').classList.remove('active');
+      }
+    }
+
+    function renderResults() {
+      const container = $('results');
+      if (songs.length === 0) {
+        container.innerHTML =
+          '<p style="color:#2a4a2a;font-style:italic">'
+          + '> No matches found.</p>';
+        return;
+      }
+      let html = '';
+      songs.forEach((song, i) => {
+        html += `
+          <div class="song-row" onclick="selectSong(${i})"
+               id="song-${i}">
+            <strong>${esc(song.title)}</strong>
+            <div class="song-meta">
+              ${esc(song.channel)} &middot;
+              ${fmtDuration(song.duration)} &middot;
+              ${esc(song.views)} views
+            </div>
+          </div>`;
+      });
+      html += `<button id="add-btn" onclick="addToQueue()" disabled>
+                 [ ADD TO QUEUE ]
+               </button>`;
+      container.innerHTML = html;
+    }
+
+    function selectSong(i) {
+      document.querySelectorAll('.song-row')
+        .forEach(el => el.classList.remove('selected'));
+      $('song-' + i).classList.add('selected');
+      selectedIndex = i;
+      $('add-btn').disabled = false;
+    }
+
+    // ---- Add to queue ----
+
+    async function addToQueue() {
+      if (selectedIndex === null) return;
+      const btn = $('add-btn');
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/queue/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(songs[selectedIndex]),
+        });
+        if (!res.ok) throw new Error('Failed to add');
+        showStatus(
+          `> "${songs[selectedIndex].title}" added to queue`, true
+        );
+        document.querySelectorAll('.song-row')
+          .forEach(el => el.classList.remove('selected'));
+        selectedIndex = null;
+        pollQueue();
+      } catch (e) {
+        showStatus(e.message, false);
+        btn.disabled = false;
+      }
+    }
+
+    // ---- Helpers ----
+
+    function showStatus(msg, ok) {
+      const el = $('status');
+      el.textContent = msg;
+      el.className = ok ? 'success' : 'error';
+      setTimeout(() => { el.className = ''; }, 3000);
+    }
+
+    function esc(text) {
+      const d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML;
+    }
+
+    // ---- Init ----
+    startPolling();
+  </script>
+</body>
+</html>
