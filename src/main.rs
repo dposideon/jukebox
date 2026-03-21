@@ -98,6 +98,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _service_daemon = register_mdns(80u16)?;
     let local_ip = get_local_ip()?;
 
+    println!("Listening on {}:80", &local_ip);
+
     match create_qr_code(format!("{}:{}", &local_ip, 80).as_str()) {
         Ok(_) => {
             println!("QR code created");
