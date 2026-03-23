@@ -1,9 +1,8 @@
-use super::*;
 use crate::networking::{
     page_router::{admin, handler_404, index, qr_handler},
     player_router::{pause, play, skip},
     queue_router::{add_to_queue, get_downloaded_queue, get_now_playing, get_queue, search_api},
-    AppState, STATIC_DIR,
+    AppState,
 };
 
 use axum::{
@@ -11,7 +10,6 @@ use axum::{
     Router,
 };
 use tokio::net::TcpListener;
-use tower_http::services::ServeDir;
 
 pub async fn create_server(state: AppState) {
     let listener = TcpListener::bind("0.0.0.0:80")
@@ -20,7 +18,7 @@ pub async fn create_server(state: AppState) {
 
     let app = Router::new()
         .route("/", get(index))
-        .route("qr.png", get(qr_handler))
+        .route("/qr.png", get(qr_handler))
         .route("/api/search", get(search_api))
         .route("/api/queue", get(get_queue))
         .route("/api/queue/add", post(add_to_queue))

@@ -1,11 +1,10 @@
-use crate::libs::{LIBRARY_DIR, YTDLP};
+use crate::paths::{libs_dir, ytdlp_exe};
 
 use super::song::Song;
 use super::*;
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-use std::sync::Arc;
 
 use regex::Regex;
 use reqwest::Client;
@@ -131,19 +130,14 @@ fn parse_search_results(response: serde_json::Value, songs: &mut Vec<Song>) {
 }
 
 pub fn download_as_mp3(url: &str, output_file: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    let base = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let ytdlp_path = base.join("libs/yt-dlp");
-    let ffmpeg_dir = base.join("libs");
-    let output = base.join("output").join(output_file);
-
-    let status = Command::new(ytdlp_path)
+    let status = Command::new(ytdlp_exe())
         .arg("--ffmpeg-location")
-        .arg(ffmpeg_dir)
+        .arg(libs_dir())
         .arg("-x")
         .arg("--audio-format")
         .arg("mp3")
         .arg("-o")
-        .arg(output)
+        .arg(output_file)
         .arg(url)
         .status()?;
 

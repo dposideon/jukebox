@@ -6,8 +6,6 @@ use crate::{
     },
 };
 
-use std::sync::Arc;
-
 use reqwest::Client;
 use tokio::sync::mpsc;
 
@@ -18,8 +16,6 @@ pub mod player_router;
 pub mod qr;
 pub mod queue_router;
 pub mod server;
-
-pub const STATIC_DIR: &str = "static";
 
 #[derive(Clone)]
 pub struct AppState {

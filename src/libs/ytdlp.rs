@@ -1,7 +1,5 @@
 use futures_util::StreamExt;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
-use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
 pub async fn download_ytdlp(
@@ -16,7 +14,7 @@ pub async fn download_ytdlp(
         return Err(format!("Download failed: HTTP {}", response.status()).into());
     }
 
-    let mut file = fs::File::create(&dest).await?;
+    let mut file = tokio::fs::File::create(&dest).await?;
     let mut stream = response.bytes_stream();
 
     while let Some(chunk) = stream.next().await {
@@ -28,7 +26,7 @@ pub async fn download_ytdlp(
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&dest, std::fs::Permissions::from_mode(0o755)).await?;
+        tokio::fs::set_permissions(&dest, std::fs::Permissions::from_mode(0o755)).await?;
     }
 
     println!("yt-dlp downloaded to {}", dest.display());

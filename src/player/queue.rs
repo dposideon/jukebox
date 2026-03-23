@@ -27,19 +27,19 @@ fn get_next_song(queue: Queue) -> Option<Song> {
 
 pub fn add_to_downloaded_queue(queue: Queue, downloaded_queue: Queue, counter: &mut usize) {
     if let Some(mut song) = get_next_song(queue) {
-        let output_path = PathBuf::from(format!("track_{}.mp3", counter));
+        let output_path = output_dir().join(format!("track_{}.mp3", counter));
 
         match download_as_mp3(&song.link, &output_path) {
             Ok(()) => {
-                song.path = Some(output_path.to_string_lossy().to_string());
+                song.path = Some(output_path);
                 if let Ok(mut dq) = downloaded_queue.lock() {
                     dq.push_back(song);
                 } else {
                     println!("Downloader Message: Error\nTHE DLQ LOCK IS POISONED!");
                 }
                 println!(
-                    "Downloader Message: Download Success\nPath: {}",
-                    &output_path.display(),
+                    "Downloader Message: Download Success\nPath: track_{}.mp3",
+                    counter,
                 );
 
                 if *counter < MAX_QUEUE_DEPTH {

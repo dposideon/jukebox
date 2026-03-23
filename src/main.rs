@@ -1,19 +1,9 @@
-#![allow(unused)]
-use std::{
-    path::PathBuf,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use crate::{
-    libs::{
-        ffmpeg::download_ffmpeg,
-        get_binary_urls,
-        ytdlp::{delete_ytdlp, download_ytdlp},
-        LIBRARY_DIR,
-    },
     music_info::{
         song::{NowPlaying, Song},
-        youtube::{download_as_mp3, get_search_results, InnerTubeConfig},
+        youtube::InnerTubeConfig,
     },
     networking::{
         local_ip::get_local_ip,
@@ -24,10 +14,8 @@ use crate::{
     },
     paths::{deps::init_files, init_base_dir},
     player::{
-        clean_old_output,
         queue::{new_queue, queue_worker},
         sink::{create_player, player_poll},
-        OUTPUT_DIR,
     },
 };
 

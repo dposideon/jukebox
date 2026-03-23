@@ -72,6 +72,7 @@ mod tests {
         ffmpeg::{delete_ffmpeg, download_ffmpeg},
         ytdlp::{delete_ytdlp, download_ytdlp},
     };
+    use crate::paths::{ffmpeg_exe, libs_dir, ytdlp_exe};
 
     use super::*;
 
@@ -79,7 +80,7 @@ mod tests {
     #[ignore]
     async fn test_ytdlp_download() {
         let info = get_binary_urls().unwrap();
-        let path = download_ytdlp(info.ytdlp, LIBRARY_DIR).await.unwrap();
+        let path = download_ytdlp(info.ytdlp, &ytdlp_exe()).await.unwrap();
 
         assert!(path.exists());
         assert!(path.metadata().unwrap().len() > 0);
@@ -90,7 +91,7 @@ mod tests {
             .unwrap();
         assert!(output.status.success());
 
-        delete_ytdlp(LIBRARY_DIR).unwrap();
+        delete_ytdlp(&ytdlp_exe()).unwrap();
         assert!(!path.exists());
     }
 
@@ -98,7 +99,7 @@ mod tests {
     #[ignore]
     async fn test_ffmpeg_download() {
         let info = get_binary_urls().unwrap();
-        let path = download_ffmpeg(LIBRARY_DIR, info.ffmpeg, &info.os)
+        let path = download_ffmpeg(&libs_dir(), info.ffmpeg, &info.os)
             .await
             .unwrap();
 
@@ -112,7 +113,7 @@ mod tests {
 
         assert!(output.status.success());
 
-        delete_ffmpeg(LIBRARY_DIR).unwrap();
+        delete_ffmpeg(&ffmpeg_exe()).unwrap();
         assert!(!path.exists());
     }
 }

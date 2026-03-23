@@ -1,6 +1,4 @@
-use super::*;
-
-use std::path::Path;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
@@ -14,7 +12,7 @@ pub struct Song {
     pub link: String,
     pub channel: String,
     pub views: String,
-    pub path: Option<String>,
+    pub path: Option<PathBuf>,
 }
 
 impl Default for Song {

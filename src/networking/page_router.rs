@@ -4,7 +4,7 @@ use axum::{
     response::{Html, IntoResponse},
 };
 
-use crate::networking::{AppState, STATIC_DIR};
+use crate::networking::AppState;
 
 pub async fn index() -> Html<&'static str> {
     Html(include_str!("../../static/index.html"))

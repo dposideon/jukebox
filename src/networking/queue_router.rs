@@ -12,7 +12,6 @@ use crate::{
         youtube::get_search_results,
     },
     networking::AppState,
-    player::queue::Queue,
 };
 
 #[derive(Deserialize)]

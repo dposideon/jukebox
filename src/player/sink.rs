@@ -1,8 +1,7 @@
 use std::io::BufReader;
-use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use rodio::{source::Source, Decoder, MixerDeviceSink, Player};
+use rodio::{Decoder, MixerDeviceSink, Player};
 use tokio::sync::mpsc;
 
 use crate::{
@@ -19,7 +18,7 @@ pub fn create_player() -> Result<(MixerDeviceSink, ProtectedPlayer), Box<dyn std
     Ok((handle, Arc::new(Mutex::new(player))))
 }
 
-pub async fn player_poll(mut queue_tx: mpsc::Sender<QueueCommand>, player: ProtectedPlayer) {
+pub async fn player_poll(queue_tx: mpsc::Sender<QueueCommand>, player: ProtectedPlayer) {
     loop {
         let is_empty = player.lock().is_ok_and(|g| g.empty());
 
@@ -40,9 +39,7 @@ pub async fn player_poll(mut queue_tx: mpsc::Sender<QueueCommand>, player: Prote
 
 pub fn cycle_player(next_song: Song, now_playing: NowPlaying, player: ProtectedPlayer) {
     if let Some(path) = &next_song.path {
-        let base = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        let output = base.join("output").join(path);
-        match std::fs::File::open(output) {
+        match std::fs::File::open(path) {
             Ok(file) => match Decoder::new(BufReader::new(file)) {
                 Ok(source) => {
                     if let Ok(p) = player.lock() {

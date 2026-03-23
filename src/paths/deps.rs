@@ -24,16 +24,16 @@ pub async fn init_files() -> Result<(), Box<dyn std::error::Error>> {
 
     if !ffmpeg_exe().exists() {
         println!("Downloading FFMPEG, this may take a while.");
-        download_ffmpeg(&libs_dir(), &system_info.ffmpeg, &system_info.os).await?;
+        download_ffmpeg(&libs_dir(), system_info.ffmpeg, &system_info.os).await?;
         println!("Successfully downloaded FFMPEG");
     }
 
     if ytdlp_exe().exists() {
         println!("Updating yt-dlp, this may take a while.");
-        download_ytdlp(&system_info.ytdlp, &ytdlp_exe()).await?;
+        download_ytdlp(system_info.ytdlp, &ytdlp_exe()).await?;
     } else {
         println!("Downloading yt-dlp, this may take a while.");
-        download_ytdlp(&system_info.ytdlp, &ytdlp_exe()).await?;
+        download_ytdlp(system_info.ytdlp, &ytdlp_exe()).await?;
     }
 
     println!("Successfully downloaded yt-dlp");

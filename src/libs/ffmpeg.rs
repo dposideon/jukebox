@@ -2,7 +2,6 @@ use super::*;
 
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 
 //pub fn ffmpeg_on_path() -> bool {
 //    std::process::Command::new("ffmpeg")
