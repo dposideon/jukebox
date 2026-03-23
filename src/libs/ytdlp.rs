@@ -1,16 +1,13 @@
 use futures_util::StreamExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
 pub async fn download_ytdlp(
     link: &str,
-    lib_dir: &str,
+    dest: &Path,
 ) -> Result<PathBuf, Box<dyn std::error::Error>> {
-    let output_dir = PathBuf::from_str(lib_dir)?;
-    let dest = output_dir.join("yt-dlp");
-
     println!("Downloading yt-dlp from {}", link);
 
     let response = reqwest::get(link).await?;
@@ -36,13 +33,11 @@ pub async fn download_ytdlp(
 
     println!("yt-dlp downloaded to {}", dest.display());
 
-    Ok(dest)
+    Ok(dest.to_path_buf())
 }
 
-pub fn delete_ytdlp(lib_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let target_dir = PathBuf::from_str(lib_dir)?;
-    let target_file = target_dir.join("yt-dlp");
-    std::fs::remove_file(target_file)?;
+pub fn delete_ytdlp(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    std::fs::remove_file(path)?;
 
     Ok(())
 }

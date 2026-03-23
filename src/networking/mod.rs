@@ -28,6 +28,7 @@ pub struct AppState {
     pub downloaded_queue: Queue,
     pub now_playing: NowPlaying,
     pub player: ProtectedPlayer,
+    pub qr: Vec<u8>,
     pub inner_tube_config: InnerTubeConfig,
     pub client: Client,
 }

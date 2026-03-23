@@ -1,5 +1,6 @@
 use axum::{
     extract::State,
+    http::header,
     response::{Html, IntoResponse},
 };
 
@@ -18,4 +19,8 @@ pub async fn handler_404() -> (axum::http::StatusCode, Html<&'static str>) {
         axum::http::StatusCode::NOT_FOUND,
         Html(include_str!("../../static/404.html")),
     )
+}
+
+pub async fn qr_handler(State(state): State<AppState>) -> impl IntoResponse {
+    ([(header::CONTENT_TYPE, "image/png")], state.qr)
 }

@@ -12,12 +12,10 @@ use std::str::FromStr;
 //}
 
 pub async fn download_ffmpeg(
-    lib_dir: &str,
+    lib_dir: &Path,
     link: &str,
     os: &Os,
 ) -> Result<PathBuf, Box<dyn std::error::Error>> {
-    let output_dir = PathBuf::from_str(lib_dir)?;
-
     println!("Downloading ffmpeg from {}", link);
 
     let response = reqwest::get(link).await?;
@@ -31,8 +29,8 @@ pub async fn download_ffmpeg(
     println!("Downloaded compressed ffmpeg from {}", link);
 
     let extracted = match os {
-        Os::Mac => extract_ffmpeg_zip(&bytes, &output_dir)?,
-        Os::Linux => extract_ffmpeg_tar_xz(&bytes, &output_dir)?,
+        Os::Mac => extract_ffmpeg_zip(&bytes, lib_dir)?,
+        Os::Linux => extract_ffmpeg_tar_xz(&bytes, lib_dir)?,
     };
 
     #[cfg(unix)]
@@ -96,10 +94,8 @@ fn extract_ffmpeg_tar_xz(
     Err("ffmpeg binary not found in archive".into())
 }
 
-pub fn delete_ffmpeg(lib_dir: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let target_dir = PathBuf::from_str(lib_dir)?;
-    let target_file = target_dir.join("ffmpeg");
-    std::fs::remove_file(target_file)?;
+pub fn delete_ffmpeg(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    std::fs::remove_file(path)?;
 
     Ok(())
 }

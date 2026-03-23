@@ -16,9 +16,13 @@ use crate::{
         youtube::{download_as_mp3, get_search_results, InnerTubeConfig},
     },
     networking::{
-        local_ip::get_local_ip, mdns::register_mdns, qr::create_qr_code, server::create_server,
+        local_ip::get_local_ip,
+        mdns::register_mdns,
+        qr::{create_qr_code, EMPTY_PNG},
+        server::create_server,
         AppState,
     },
+    paths::{deps::init_files, init_base_dir},
     player::{
         clean_old_output,
         queue::{new_queue, queue_worker},
@@ -30,56 +34,18 @@ use crate::{
 mod libs;
 mod music_info;
 mod networking;
+mod paths;
 mod player;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let output_dir = PathBuf::from(OUTPUT_DIR);
-    let lib_dir = PathBuf::from(LIBRARY_DIR);
-
-    if !output_dir.exists() {
-        println!("Creating Output Directory");
-        std::fs::create_dir(output_dir)?;
-    } else {
-        print!("Deleting old tracks");
-        match clean_old_output() {
-            Ok(_) => {
-                println!("Clean.");
-            }
-            Err(_) => {
-                println!("Old tracks might still be there");
-            }
-        }
+    if std::env::args().any(|a| a == "--version") {
+        println!("jukebox {}", env!("CARGO_PKG_VERSION"));
+        return Ok(());
     }
 
-    if !lib_dir.exists() {
-        println!("Creating Library Directory");
-        std::fs::create_dir(&lib_dir)?;
-        let system_info = get_binary_urls()?;
-        println!("Downloading FFMPEG, this may take a while.");
-        download_ffmpeg(
-            &lib_dir.to_string_lossy(),
-            system_info.ffmpeg,
-            &system_info.os,
-        )
-        .await?;
-        println!("Downloading yt-dlp, this may take a while.");
-        download_ytdlp(system_info.ytdlp, &lib_dir.to_string_lossy()).await?;
-        println!("Successfully Installed Libraries");
-    } else {
-        println!("Updating yt-dlp, this may take a while.");
-        match delete_ytdlp(&lib_dir.to_string_lossy()) {
-            Ok(_) => {
-                println!("Deleted Old ytdlp");
-            }
-            Err(_) => {
-                println!("yt-dlp wasnt found")
-            }
-        }
-        let system_info = get_binary_urls()?;
-        download_ytdlp(system_info.ytdlp, &lib_dir.to_string_lossy()).await?;
-        println!("Successfully updated yt-dlp.");
-    }
+    init_base_dir();
+    init_files().await?;
 
     let innertube_config = InnerTubeConfig::new().await?;
 
@@ -100,14 +66,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Listening on {}:80", &local_ip);
 
-    match create_qr_code(format!("{}:{}", &local_ip, 80).as_str()) {
-        Ok(_) => {
+    let qr = match create_qr_code(format!("{}:{}", &local_ip, 80).as_str()) {
+        Ok(code) => {
             println!("QR code created");
+            code
         }
         Err(_) => {
             println!("Error generating qr code");
+            EMPTY_PNG.to_vec()
         }
-    }
+    };
 
     let app_state = AppState {
         queue_tx: queue_tx.clone(),
@@ -115,6 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         downloaded_queue: downloaded_queue.clone(),
         now_playing: now_playing.clone(),
         player: player.clone(),
+        qr,
         inner_tube_config: innertube_config.clone(),
         client: client.clone(),
     };
