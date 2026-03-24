@@ -26,7 +26,7 @@ esac
 echo "🎵 Jukebox Installer"
 echo ""
 
-LATEST_VERSION=$(curl -fsSL "$API_URL" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"//;s/".*//')
+LATEST_VERSION=$(curl -fsSL "$API_URL" < /dev/null | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"//;s/".*//')
 
 if [ -z "$LATEST_VERSION" ]; then
     echo "❌ Failed to fetch latest version from GitHub"
