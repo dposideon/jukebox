@@ -31,7 +31,7 @@ out of the host device.
 4. Under the hood, `yt-dlp` downloads the audio and `ffmpeg` converts it
    to MP3.
 5. Jukebox plays the queue in order through the host machine's primary
-   audio output using [rodio](https://github.com/RuSt-Random-Chat/rodio).
+   audio output using [rodio](https://github.com/RustAudio/rodio).
 
 The admin can visit the admin page to pause, play, or skip tracks.
 
