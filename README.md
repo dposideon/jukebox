@@ -39,14 +39,13 @@ The admin can visit the admin page to pause, play, or skip tracks.
 
 - **macOS** or **Linux**
 - A network that supports mDNS (most home/office networks do)
-- That's it. Everything else is handled for you.
 
 ## Installation
 
 Run the install script:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dposideon/jukebox/refs/heads/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/dposideon/jukebox/refs/heads/master/install.sh | bash
 ```
 
 This downloads the correct binary for your platform, places it on your
@@ -125,15 +124,22 @@ rm -rf ~/Library/Application\ Support/jukebox
 
 ## Known Limitations
 
-- No authentication on the admin page (yet).
+- No authentication on the admin page.
 - Port 80 is not configurable.
 - Requires mDNS support on the network to use the `music.local` address.
+- mDNS is kind of sketchy, so entering the IP:PORT, or using the QR code on 
+  the webpage directly might be necessary.
 - Song availability depends on yt-dlp's continued compatibility with
   YouTube.
 
+## Upcoming Features
+
+- Authentication on admin page.
+- Ability to update without uninstalling.
+
 ## Acknowledgments
 
-The Matrix-themed UI (HTML, CSS, and JavaScript) was generated with
+The Matrix-themed UI (HTML, CSS, and JavaScript), and installer scripts were generated with
 [Claude](https://claude.ai). All backend code, architecture, and
 infrastructure are my own work.
 
