@@ -59,7 +59,7 @@ DOWNLOAD_URL="https://github.com/$REPO/releases/latest/download/jukebox-${TARGET
 
 echo ""
 echo "  Downloading $LATEST_VERSION for $TARGET..."
-curl -fsSL "$DOWNLOAD_URL" -o "/tmp/$APP_NAME"
+curl -fsSL "$DOWNLOAD_URL" -o "/tmp/$APP_NAME" < /dev/null
 chmod +x "/tmp/$APP_NAME"
 
 # ── Install to system path ──────────────────────────────────────────
