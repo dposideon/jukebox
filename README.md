@@ -6,7 +6,7 @@ out of the host device.
 
 ## Screenshots
 
-![Search page](assets/search.png) | ![Admin page](assets/admin.png)
+![Search page](assets/search.jpeg) | ![Admin page](assets/admin.jpeg)
 
 ## Features
 
